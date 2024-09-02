@@ -1,16 +1,17 @@
 syntax = "proto3";
-option go_package = ",;proto";
+option go_package = ".;proto";
 
 import "google/protobuf/empty.proto";
 
 service User{
   rpc GetUserList(PageInfo) returns (UserListResponse); //获取用户列表
-  rpc GetUserById(IdRequest) returns (UserListResponse); // id查询
-  rpc GetUserByMobile(MobileRequest) returns (UserListResponse); // 手机号查询
-  rpc CreateUser(CreateUserInfo) returns (UserListResponse); //添加用户
+  rpc GetUserById(IdRequest) returns (UserInfoResponse); // id查询
+  rpc GetUserByMobile(MobileRequest) returns (UserInfoResponse); // 手机号查询
+  rpc CreateUser(CreateUserInfo) returns (UserInfoResponse); //添加用户
   rpc UpdateUser(UpdateUserInfo) returns (google.protobuf.Empty); //修改用户信息
   rpc CheckUserPassword(PasswordCheckInfo) returns (CheckResponse); //校验密码
 }
+// protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. user.proto
 
 message PasswordCheckInfo{
   string password = 1;
@@ -27,7 +28,7 @@ message UpdateUserInfo{
   string password = 3;
   string nickname = 4;
   uint64 birthDay = 5;
-  string gender = 6;
+  uint32 gender = 6;
   int32 role = 7;
 }
 
@@ -56,12 +57,12 @@ message UserInfoResponse{
   string password = 3;
   string nickname = 4;
   uint64 birthDay = 5;
-  string gender = 6;
-  int32 role = 7;
+  uint32 gender = 6;
+  uint32 role = 7;
 
 }
 
 message UserListResponse{
   uint32 total = 1;
-
+  repeated UserInfoResponse data = 2;
 }
