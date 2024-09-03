@@ -1,14 +1,20 @@
-package heandler
+package handler
 
 import (
 	"context"
-	"google.golang.org/grpc"
+	"crypto/sha512"
+	"fmt"
+	"github.com/anaskhan96/go-password-encoder"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
+	"strings"
+
 	"mxshop_srvs/user_srv/global"
 	"mxshop_srvs/user_srv/model"
 	"mxshop_srvs/user_srv/proto"
+	"time"
 )
 
 type UserServer struct{}
@@ -47,7 +53,7 @@ func Model2Response(user model.User) *proto.UserInfoResponse {
 	return UserInfoRsp
 }
 
-func (u *UserServer) GetUserList(ctx context.Context, req *proto.PageInfo, opts ...grpc.CallOption) (*proto.UserListResponse, error) {
+func (u *UserServer) GetUserList(ctx context.Context, req *proto.PageInfo) (*proto.UserListResponse, error) {
 	// 实例化用户组
 	var users []model.User
 	result := global.DB.Find(&users)
@@ -92,4 +98,65 @@ func (u *UserServer) GetUserByMobile(ctx context.Context, req *proto.MobileReque
 	}
 	UserInfoRsp := Model2Response(user)
 	return UserInfoRsp, nil
+}
+
+func (u *UserServer) CreateUser(ctx context.Context, req *proto.CreateUserInfo) (*proto.UserInfoResponse, error) {
+	// 先查询用户是否存在
+	var user model.User
+	result := global.DB.Find(&model.User{Mobile: req.Mobile}).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected != 0 {
+		return nil, status.Error(codes.AlreadyExists, "手机号已注册")
+	}
+	user.Nickname = req.Nickname
+	user.UpdatedAt = time.Now()
+	// 加密
+	options := &password.Options{16, 100, 32, sha512.New}
+	salt, encodedPwd := password.Encode(req.Password, options)
+	pwd := fmt.Sprintf("sha512$%s$%s", salt, encodedPwd)
+
+	user.Password = pwd
+	tx := global.DB.Create(&user)
+	if tx.Error != nil {
+		return nil, result.Error
+	}
+	UserInfoRsp := Model2Response(user)
+	return UserInfoRsp, nil
+}
+
+func (u *UserServer) UpdateUser(ctx context.Context, req *proto.UpdateUserInfo) (*emptypb.Empty, error) {
+	// 修改个人中心页面
+	var user model.User
+	result := global.DB.First(&user, req.Id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, status.Error(codes.AlreadyExists, "用户不存照")
+	}
+	birthDay := time.Unix(int64(req.BirthDay), 0)
+	user.Birthday = &birthDay
+	user.Mobile = req.Mobile
+	user.Nickname = req.Nickname
+	user.UpdatedAt = time.Now()
+	user.Gender = uint8(req.Gender)
+	tx := global.DB.Save(&user)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (u *UserServer) CheckUserPassword(ctx context.Context, req *proto.PasswordCheckInfo) (*proto.CheckResponse, error) {
+	options := &password.Options{16, 100, 32, sha512.New}
+	encrypted := strings.Split(req.EncryptedPassword, "$")
+	if len(encrypted) != 4 {
+		return nil, status.Error(codes.Internal, "密文不正确")
+	}
+	Check := password.Verify(req.Password, encrypted[2], encrypted[3], options)
+	return &proto.CheckResponse{
+		Success: Check,
+	}, nil
 }
