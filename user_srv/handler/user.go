@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"crypto/sha512"
+	"errors"
 	"fmt"
 	"github.com/anaskhan96/go-password-encoder"
 	"google.golang.org/grpc/codes"
@@ -103,25 +104,37 @@ func (u *UserServer) GetUserByMobile(ctx context.Context, req *proto.MobileReque
 func (u *UserServer) CreateUser(ctx context.Context, req *proto.CreateUserInfo) (*proto.UserInfoResponse, error) {
 	// 先查询用户是否存在
 	var user model.User
-	result := global.DB.Find(&model.User{Mobile: req.Mobile}).First(&user)
-	if result.Error != nil {
+
+	// 使用 Where() 和 First() 进行条件查询
+	result := global.DB.Where("mobile = ?", req.Mobile).First(&user)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		// 如果查询出错，并且错误不是 "记录未找到"，返回错误
 		return nil, result.Error
 	}
+
+	// 如果查询到了记录，说明手机号已注册
 	if result.RowsAffected != 0 {
 		return nil, status.Error(codes.AlreadyExists, "手机号已注册")
 	}
-	user.Nickname = req.Nickname
+
+	// 用户不存在，继续创建
+	user.Mobile = req.Mobile
 	user.UpdatedAt = time.Now()
-	// 加密
+
+	// 加密密码
 	options := &password.Options{16, 100, 32, sha512.New}
 	salt, encodedPwd := password.Encode(req.Password, options)
 	pwd := fmt.Sprintf("sha512$%s$%s", salt, encodedPwd)
 
 	user.Password = pwd
+	user.Nickname = "test6"
+	// 创建用户记录
 	tx := global.DB.Create(&user)
 	if tx.Error != nil {
-		return nil, result.Error
+		return nil, tx.Error
 	}
+
+	// 返回用户信息
 	UserInfoRsp := Model2Response(user)
 	return UserInfoRsp, nil
 }
@@ -138,8 +151,7 @@ func (u *UserServer) UpdateUser(ctx context.Context, req *proto.UpdateUserInfo) 
 	}
 	birthDay := time.Unix(int64(req.BirthDay), 0)
 	user.Birthday = &birthDay
-	user.Mobile = req.Mobile
-	user.Nickname = req.Nickname
+	user.Nickname = req.NickName
 	user.UpdatedAt = time.Now()
 	user.Gender = uint8(req.Gender)
 	tx := global.DB.Save(&user)
@@ -149,14 +161,13 @@ func (u *UserServer) UpdateUser(ctx context.Context, req *proto.UpdateUserInfo) 
 	return &emptypb.Empty{}, nil
 }
 
-func (u *UserServer) CheckUserPassword(ctx context.Context, req *proto.PasswordCheckInfo) (*proto.CheckResponse, error) {
+func (u *UserServer) CheckUserPasswd(ctx context.Context, req *proto.PasswordCheckInfo) (*proto.CheckResponse, error) {
 	options := &password.Options{16, 100, 32, sha512.New}
-	encrypted := strings.Split(req.EncryptedPassword, "$")
-	if len(encrypted) != 4 {
-		return nil, status.Error(codes.Internal, "密文不正确")
-	}
-	Check := password.Verify(req.Password, encrypted[2], encrypted[3], options)
+	pwdInfo := strings.Split(req.EncryptedPassword, "$")
+	verify := password.Verify(req.Password, pwdInfo[2], pwdInfo[3], options)
+	fmt.Println(pwdInfo)
+	fmt.Println(verify)
 	return &proto.CheckResponse{
-		Success: Check,
+		Success: verify,
 	}, nil
 }
