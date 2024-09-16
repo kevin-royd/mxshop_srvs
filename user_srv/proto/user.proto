@@ -1,49 +1,43 @@
 syntax = "proto3";
 option go_package = ".;proto";
-
 import "google/protobuf/empty.proto";
 
 service User{
   rpc GetUserList(PageInfo) returns (UserListResponse); //获取用户列表
-  rpc GetUserById(IdRequest) returns (UserInfoResponse); // id查询
-  rpc GetUserByMobile(MobileRequest) returns (UserInfoResponse); // 手机号查询
-  rpc CreateUser(CreateUserInfo) returns (UserInfoResponse); //添加用户
-  rpc UpdateUser(UpdateUserInfo) returns (google.protobuf.Empty); //修改用户信息
-  rpc CheckUserPassword(PasswordCheckInfo) returns (CheckResponse); //校验密码
-}
-// protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. user.proto
-
-message PasswordCheckInfo{
-  string password = 1;
-  string encryptedPassword = 2;
+  rpc GetUserByMobile(MobileRequest) returns(UserInfoResponse); //通过手机号查询
+  rpc GetUserById(IdRequest) returns(UserInfoResponse); // 通过ip查询
+  rpc CreateUser(CreateUserInfo) returns(UserInfoResponse); //创建用户
+  rpc UpdateUser(UpdateUserInfo) returns(google.protobuf.Empty); //更新用户
+  rpc CheckUserPasswd(PasswordCheckInfo) returns(CheckResponse); //检测密码
 }
 
 message CheckResponse{
   bool success = 1;
 }
 
+message PasswordCheckInfo{
+  string password = 1;
+  string encryptedPassword = 2;
+}
+
 message UpdateUserInfo{
   uint32 id = 1;
-  string mobile = 2;
-  string password = 3;
-  string nickname = 4;
-  uint64 birthDay = 5;
-  uint32 gender = 6;
-  int32 role = 7;
+  string nickName = 2;
+  uint32 gender = 3;
+  uint64 birthDay = 4;
 }
 
 message CreateUserInfo{
   string mobile = 1;
   string password = 2;
-  string nickname = 3;
-}
-
-message MobileRequest{
-  string mobile = 1;
 }
 
 message IdRequest{
   uint32 id = 1;
+}
+
+message MobileRequest{
+  string mobile = 1;
 }
 
 message PageInfo{
@@ -54,12 +48,11 @@ message PageInfo{
 message UserInfoResponse{
   uint32 id = 1;
   string mobile = 2;
-  string password = 3;
+  string password=3;
   string nickname = 4;
-  uint64 birthDay = 5;
+  uint64 BirthDay = 5;
   uint32 gender = 6;
   uint32 role = 7;
-
 }
 
 message UserListResponse{

@@ -20,12 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	User_GetUserList_FullMethodName       = "/User/GetUserList"
-	User_GetUserById_FullMethodName       = "/User/GetUserById"
-	User_GetUserByMobile_FullMethodName   = "/User/GetUserByMobile"
-	User_CreateUser_FullMethodName        = "/User/CreateUser"
-	User_UpdateUser_FullMethodName        = "/User/UpdateUser"
-	User_CheckUserPassword_FullMethodName = "/User/CheckUserPassword"
+	User_GetUserList_FullMethodName     = "/User/GetUserList"
+	User_GetUserByMobile_FullMethodName = "/User/GetUserByMobile"
+	User_GetUserById_FullMethodName     = "/User/GetUserById"
+	User_CreateUser_FullMethodName      = "/User/CreateUser"
+	User_UpdateUser_FullMethodName      = "/User/UpdateUser"
+	User_CheckUserPasswd_FullMethodName = "/User/CheckUserPasswd"
 )
 
 // UserClient is the client API for User service.
@@ -33,11 +33,11 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserClient interface {
 	GetUserList(ctx context.Context, in *PageInfo, opts ...grpc.CallOption) (*UserListResponse, error)
-	GetUserById(ctx context.Context, in *IdRequest, opts ...grpc.CallOption) (*UserInfoResponse, error)
 	GetUserByMobile(ctx context.Context, in *MobileRequest, opts ...grpc.CallOption) (*UserInfoResponse, error)
+	GetUserById(ctx context.Context, in *IdRequest, opts ...grpc.CallOption) (*UserInfoResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserInfo, opts ...grpc.CallOption) (*UserInfoResponse, error)
 	UpdateUser(ctx context.Context, in *UpdateUserInfo, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CheckUserPassword(ctx context.Context, in *PasswordCheckInfo, opts ...grpc.CallOption) (*CheckResponse, error)
+	CheckUserPasswd(ctx context.Context, in *PasswordCheckInfo, opts ...grpc.CallOption) (*CheckResponse, error)
 }
 
 type userClient struct {
@@ -58,20 +58,20 @@ func (c *userClient) GetUserList(ctx context.Context, in *PageInfo, opts ...grpc
 	return out, nil
 }
 
-func (c *userClient) GetUserById(ctx context.Context, in *IdRequest, opts ...grpc.CallOption) (*UserInfoResponse, error) {
+func (c *userClient) GetUserByMobile(ctx context.Context, in *MobileRequest, opts ...grpc.CallOption) (*UserInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserInfoResponse)
-	err := c.cc.Invoke(ctx, User_GetUserById_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, User_GetUserByMobile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userClient) GetUserByMobile(ctx context.Context, in *MobileRequest, opts ...grpc.CallOption) (*UserInfoResponse, error) {
+func (c *userClient) GetUserById(ctx context.Context, in *IdRequest, opts ...grpc.CallOption) (*UserInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserInfoResponse)
-	err := c.cc.Invoke(ctx, User_GetUserByMobile_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, User_GetUserById_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +98,10 @@ func (c *userClient) UpdateUser(ctx context.Context, in *UpdateUserInfo, opts ..
 	return out, nil
 }
 
-func (c *userClient) CheckUserPassword(ctx context.Context, in *PasswordCheckInfo, opts ...grpc.CallOption) (*CheckResponse, error) {
+func (c *userClient) CheckUserPasswd(ctx context.Context, in *PasswordCheckInfo, opts ...grpc.CallOption) (*CheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CheckResponse)
-	err := c.cc.Invoke(ctx, User_CheckUserPassword_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, User_CheckUserPasswd_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,11 +113,11 @@ func (c *userClient) CheckUserPassword(ctx context.Context, in *PasswordCheckInf
 // for forward compatibility.
 type UserServer interface {
 	GetUserList(context.Context, *PageInfo) (*UserListResponse, error)
-	GetUserById(context.Context, *IdRequest) (*UserInfoResponse, error)
 	GetUserByMobile(context.Context, *MobileRequest) (*UserInfoResponse, error)
+	GetUserById(context.Context, *IdRequest) (*UserInfoResponse, error)
 	CreateUser(context.Context, *CreateUserInfo) (*UserInfoResponse, error)
 	UpdateUser(context.Context, *UpdateUserInfo) (*emptypb.Empty, error)
-	CheckUserPassword(context.Context, *PasswordCheckInfo) (*CheckResponse, error)
+	CheckUserPasswd(context.Context, *PasswordCheckInfo) (*CheckResponse, error)
 	//mustEmbedUnimplementedUserServer()
 }
 
@@ -131,11 +131,11 @@ type UnimplementedUserServer struct{}
 func (UnimplementedUserServer) GetUserList(context.Context, *PageInfo) (*UserListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserList not implemented")
 }
-func (UnimplementedUserServer) GetUserById(context.Context, *IdRequest) (*UserInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUserById not implemented")
-}
 func (UnimplementedUserServer) GetUserByMobile(context.Context, *MobileRequest) (*UserInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByMobile not implemented")
+}
+func (UnimplementedUserServer) GetUserById(context.Context, *IdRequest) (*UserInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserById not implemented")
 }
 func (UnimplementedUserServer) CreateUser(context.Context, *CreateUserInfo) (*UserInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
@@ -143,8 +143,8 @@ func (UnimplementedUserServer) CreateUser(context.Context, *CreateUserInfo) (*Us
 func (UnimplementedUserServer) UpdateUser(context.Context, *UpdateUserInfo) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
 }
-func (UnimplementedUserServer) CheckUserPassword(context.Context, *PasswordCheckInfo) (*CheckResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckUserPassword not implemented")
+func (UnimplementedUserServer) CheckUserPasswd(context.Context, *PasswordCheckInfo) (*CheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckUserPasswd not implemented")
 }
 func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 func (UnimplementedUserServer) testEmbeddedByValue()              {}
@@ -185,24 +185,6 @@ func _User_GetUserList_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _User_GetUserById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IdRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServer).GetUserById(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: User_GetUserById_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServer).GetUserById(ctx, req.(*IdRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _User_GetUserByMobile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MobileRequest)
 	if err := dec(in); err != nil {
@@ -217,6 +199,24 @@ func _User_GetUserByMobile_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServer).GetUserByMobile(ctx, req.(*MobileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_GetUserById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).GetUserById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_GetUserById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).GetUserById(ctx, req.(*IdRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -257,20 +257,20 @@ func _User_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
-func _User_CheckUserPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _User_CheckUserPasswd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PasswordCheckInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServer).CheckUserPassword(ctx, in)
+		return srv.(UserServer).CheckUserPasswd(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: User_CheckUserPassword_FullMethodName,
+		FullMethod: User_CheckUserPasswd_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServer).CheckUserPassword(ctx, req.(*PasswordCheckInfo))
+		return srv.(UserServer).CheckUserPasswd(ctx, req.(*PasswordCheckInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -287,12 +287,12 @@ var User_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _User_GetUserList_Handler,
 		},
 		{
-			MethodName: "GetUserById",
-			Handler:    _User_GetUserById_Handler,
-		},
-		{
 			MethodName: "GetUserByMobile",
 			Handler:    _User_GetUserByMobile_Handler,
+		},
+		{
+			MethodName: "GetUserById",
+			Handler:    _User_GetUserById_Handler,
 		},
 		{
 			MethodName: "CreateUser",
@@ -303,8 +303,8 @@ var User_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _User_UpdateUser_Handler,
 		},
 		{
-			MethodName: "CheckUserPassword",
-			Handler:    _User_CheckUserPassword_Handler,
+			MethodName: "CheckUserPasswd",
+			Handler:    _User_CheckUserPasswd_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
